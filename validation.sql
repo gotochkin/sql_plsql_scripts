@@ -3,10 +3,12 @@
 -- Created      2015-04-15
 -- Purpose      Upload information about schemas to a flat file before migration for future comparison
 --                      Required directory and file name to be specified.
--- Usage          @validation.sql <directory_name> <file name> <list of schemas>
+-- Usage        @validation.sql <directory_name> <file name> <list of schemas>
+-- Example:     echo -e "'MY_DIRECTORY'\n'my_file.out'\n'SCOTT'" | sqlplus / as sysdba @validation.sql
 -------------------------------------------------------------------------------
 -- Modification History
---
+-- 2021-07-15 - Modified the where clause for the tables - Gleb Otochkin
+-- 2021-07-15 - Added Example to usage  - Gleb Otochkin
 -------------------------------------------------------------------------------
 DECLARE
   t_command       VARCHAR2(200);
@@ -28,7 +30,7 @@ select to_char(sysdate,'mm/dd/yyyy hh24:mi:ss') into my_time from dual;
 UTL_FILE.PUT_LINE(my_file,'START_TIME: '||my_time);
 UTL_FILE.PUT_LINE(my_file,'TABLES:');
   for t1 in (SELECT owner,table_name FROM dba_tables where owner in (&&3)
-AND table_name not in ('EXT_TBL_RET_POST_OFF') ORDER BY owner, table_name)
+AND external='NO' and iot_name is null ORDER BY owner, table_name)
   LOOP
 
         t_command := 'SELECT /*+ parallel(4) */ COUNT(*) FROM '||t1.owner||'.'||t1.table_name;
